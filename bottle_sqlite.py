@@ -59,12 +59,13 @@ class SQLitePlugin(object):
         unicode = str
 
     def __init__(self, dbfile=':memory:', autocommit=True, dictrows=True,
-                 keyword='db', text_factory=unicode):
+                 keyword='db', text_factory=unicode, pragma_foreign_keys=False):
         self.dbfile = dbfile
         self.autocommit = autocommit
         self.dictrows = dictrows
         self.keyword = keyword
         self.text_factory = text_factory
+        self.pragma_foreign_keys = pragma_foreign_keys
 
     def setup(self, app):
         ''' Make sure that other installed plugins don't affect the same
@@ -98,7 +99,8 @@ class SQLitePlugin(object):
         autocommit = g('autocommit', self.autocommit)
         dictrows = g('dictrows', self.dictrows)
         keyword = g('keyword', self.keyword)
-        text_factory = g('keyword', self.text_factory)
+        text_factory = g('text_factory', self.text_factory)
+        pragma_foreign_keys = g('pragma_foreign_keys', self.pragma_foreign_keys)
 
         # Test if the original callback accepts a 'db' keyword.
         # Ignore it if it does not need a database handle.
@@ -117,6 +119,8 @@ class SQLitePlugin(object):
             # Add the connection handle as a keyword argument.
             kwargs[keyword] = db
 
+            if pragma_foreign_keys:
+                db.execute('PRAGMA foreign_keys = ON;')
             try:
                 rv = callback(*args, **kwargs)
                 if autocommit:
